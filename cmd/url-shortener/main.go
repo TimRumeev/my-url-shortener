@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"ex.com/internal/config"
+	"ex.com/internal/http-server/handlers/url/deleteurl"
 	getall "ex.com/internal/http-server/handlers/url/get_all"
 	getbyalias "ex.com/internal/http-server/handlers/url/get_by_alias"
 	"ex.com/internal/http-server/handlers/url/redirect"
@@ -45,8 +46,9 @@ func main() {
 	router.Post("/url/save", save.New(logger, storage))
 	router.Get("/url/getAll", getall.New(logger, storage))
 	router.Get("/url/getByAlias", getbyalias.New(logger, storage))
-
 	router.Get("/{alias}", redirect.New(logger, storage))
+	router.Delete("/url/delete", deleteurl.New(logger, storage))
+
 	server := &http.Server{
 		Addr:         cfg.Address,
 		Handler:      router,

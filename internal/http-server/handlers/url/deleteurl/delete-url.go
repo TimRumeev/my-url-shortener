@@ -1,4 +1,4 @@
-package getbyalias
+package deleteurl
 
 import (
 	"errors"
@@ -8,7 +8,6 @@ import (
 	resp "ex.com/internal/lib/api/response"
 	"ex.com/internal/lib/loggeer/sl"
 	"ex.com/internal/storage"
-
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
 	"github.com/go-playground/validator/v10"
@@ -20,16 +19,16 @@ type Request struct {
 
 type Response struct {
 	resp.Response
-	Url string `json:"url"`
+	Item resp.Url `json:"item"`
 }
 
-type GetUrlByAliaser interface {
-	GetUrlByAlias(alias string) (string, error)
+type Deleter interface {
+	DeleteUrlByAlias(alias string) (resp.Url, error)
 }
 
-func New(log *slog.Logger, getter GetUrlByAliaser) http.HandlerFunc {
+func New(log *slog.Logger, deleter Deleter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		const op = "handlers.url.get_by_alias"
+		const op = "handlers.url.delete"
 
 		log = log.With(
 			slog.String("op", op),
@@ -56,24 +55,25 @@ func New(log *slog.Logger, getter GetUrlByAliaser) http.HandlerFunc {
 		}
 
 		alias := req.Alias
-		res, err := getter.GetUrlByAlias(alias)
-		if errors.Is(err, storage.ERR_NO_ALIAS_FOUND) {
-			log.Error("there is no such alias in db")
+		res, err := deleter.DeleteUrlByAlias(alias)
+		if errors.Is(err, storage.ERR_URL_NOT_FOUND) {
+			log.Error("there is no such alias in db", sl.Err(err))
 			render.JSON(w, r, resp.ErrorWithCode(r, 404, "there is no such alias in db"))
 			return
 		}
-
 		if err != nil {
-			log.Error("failed to get url by alias", sl.Err(err))
-			render.JSON(w, r, resp.ErrorWithCode(r, 500, "failed to get url by alias"))
+			log.Error("failed to delete url by alias", sl.Err(err))
+
+			render.JSON(w, r, resp.ErrorWithCode(r, 500, "failed to delete url by alias"))
+
 			return
 		}
 
-		log.Info("Url by alias was got successfuly!", slog.String("url", res))
+		log.Info("Url was successfuly deleted!", slog.Any("Item", res))
 
 		render.JSON(w, r, Response{
 			Response: resp.OK(),
-			Url:      res,
+			Item:     res,
 		})
 
 	}

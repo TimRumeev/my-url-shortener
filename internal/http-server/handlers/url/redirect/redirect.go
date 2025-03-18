@@ -30,20 +30,20 @@ func New(log *slog.Logger, urlGetter URLGetter) http.HandlerFunc {
 		alias := chi.URLParam(r, "alias")
 		if alias == "" {
 			log.Info("no alias")
-			render.JSON(w, r, resp.Error("alias not found"))
+			render.JSON(w, r, resp.ErrorWithCode(r, 400, "invalid alias"))
 
 			return
 		}
 
 		resURL, err := urlGetter.GetUrlByAlias(alias)
 		if errors.Is(err, storage.ERR_URL_NOT_FOUND) {
-			log.Info("url not found", "alias", alias)
-			render.JSON(w, r, resp.Error("url not found"))
+			log.Error("url not found", "alias", alias)
+			render.JSON(w, r, resp.ErrorWithCode(r, 404, "url not found"))
 			return
 		}
 		if err != nil {
 			log.Error("error getting url by alias", sl.Err(err))
-			render.JSON(w, r, resp.Error("something went wrong"))
+			render.JSON(w, r, resp.ErrorWithCode(r, 500, "something went wrong"))
 
 			return
 		}

@@ -38,7 +38,7 @@ func New(log *slog.Logger, urlGetter UrlGetter) http.HandlerFunc {
 		}
 		if err != nil {
 			log.Error("failed to get all urls", sl.Err(err))
-			render.JSON(w, r, resp.Error("failed to get all urls"))
+			render.JSON(w, r, resp.ErrorWithCode(r, 500, "failed to get all urls"))
 			return
 		}
 
